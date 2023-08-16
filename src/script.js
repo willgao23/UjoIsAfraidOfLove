@@ -13,7 +13,6 @@ const scene = new THREE.Scene()
 
 //Models
 const gltfLoader = new GLTFLoader()
-const box = new THREE.Box3()
 let jump = null
 let mixer = null
 gltfLoader.load(
@@ -135,23 +134,28 @@ const tick = () => {
         mixer.update(deltaTime)
     }
 
-    if(evilHeart) {
+    if (evilHeart && evilHeart2) {
         if(evilHeart.position.z <= -4) {
             speedFactor = 1.2 + (Math.random() * 0.5)
             evilHeart.position.z = 4
         }
         evilHeart.position.z -= deltaTime * speedFactor
         evilHeart.rotation.y = elapsedTime * 4
-    }
-
-    if(evilHeart2) {
+    
+    
         if(evilHeart2.position.z <= -4) {
             speedFactor = 1.2 + (Math.random() * 0.5)
             evilHeart2.position.z = 4 
         }
-        console.log(evilHeart2.position.z)
         evilHeart2.position.z -= deltaTime * speedFactor
         evilHeart2.rotation.y = elapsedTime * 4 
+
+        if ((evilHeart.position.z <= 0.1 && evilHeart.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
+            console.log("fail")
+        }
+        if ((evilHeart2.position.z <= 0.1 && evilHeart2.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
+            console.log("fail")
+        }
     }
 
     renderer.render(scene, camera)
