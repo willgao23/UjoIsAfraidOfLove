@@ -1,7 +1,5 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'lil-gui'
 
 THREE.ColorManagement.enabled = false
 
@@ -10,10 +8,26 @@ const canvas = document.querySelector('canvas.webgl')
 
 //Scene
 const scene = new THREE.Scene()
+const fog = new THREE.Fog(0xff9999, 1, 20)
+scene.fog = fog
+scene.background = null
+
+const updateAllMaterials = () =>
+{
+    scene.traverse((child) =>
+    {
+        if(child.isMesh && child.material.isMeshStandardMaterial)
+        {
+            child.castShadow = true
+            child.receiveShadow = true
+        }
+    })
+}
 
 //Models
 const gltfLoader = new GLTFLoader()
 let jump = null
+let jumpCount = 0
 let mixer = null
 gltfLoader.load(
     'ujo.glb',
@@ -31,6 +45,8 @@ gltfLoader.load(
                 run.stop()
                 jump.play()
                 jump.reset()
+                prevJumpCount = jumpCount
+                jumpCount += 1
             }
           })
         window.addEventListener('keydown', (event) => {
@@ -39,6 +55,8 @@ gltfLoader.load(
                     run.stop()
                     jump.play()
                     jump.reset()
+                    prevJumpCount = jumpCount
+                    jumpCount += 1
                 }
             }
         })
@@ -48,6 +66,8 @@ gltfLoader.load(
                 run.play() 
             }
         })
+        
+        updateAllMaterials()
     }
 )
 
@@ -72,7 +92,6 @@ gltfLoader.load(
     }
 )
 
-
 //Sizes
 const sizes = {
     width: window.innerWidth,
@@ -93,38 +112,65 @@ window.addEventListener('resize', () => {
 
 //Camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set (-3, 1, 2)
+camera.position.set (-3 , 1, 2)
 camera.rotateY((13 * Math.PI)/ 8)
 scene.add(camera)
 
-//AxesHelper
-const axesHelper = new THREE.AxesHelper(5)
-scene.add(axesHelper)
-
 //Renderer
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
+    canvas: canvas,
+    antialias: true,
+    toneMapping: THREE.ACESFilmicToneMapping,
+    toneMappingExposure: 3,
+    useLegacyLights: false,
+    alpha: true
 })
+
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFShadowMap
+renderer.setClearColor(0xff9999, 1)
+
+//Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(100, 100),
+    new THREE.MeshToonMaterial({
+        color: 0xff9999
+    })
+)
+floor.receiveShadow = true
+floor.rotation.x = - Math.PI * 0.5
+scene.add(floor)
 
 //Lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+ambientLight.position.set(0, 2, 0) 
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-directionalLight.position.set(5, 5, 5)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3)
+directionalLight.position.set(-5, 3, 3)
+directionalLight.target.position.set(0, 0, 0)
+directionalLight.target.updateWorldMatrix()
+directionalLight.castShadow = true
+directionalLight.shadow.camera.far = 10
+directionalLight.shadow.mapSize.set(512, 512)
+directionalLight.shadow.normalBias = 0.029
+directionalLight.shadow.bias = -0.02
 scene.add(directionalLight)
 
 //Animate
-const clock = new THREE.Clock()
+const clock = new THREE.Clock() 
 let counter = document.getElementById("score")
 let gameOver = document.getElementById("gameover")
 let previousTime = 0
-let speedFactor = 1.2
+let speedFactor = 1.3
+let rotateFactor = 4
+let rotateFactor2 = 4
 let failed = false
 let score = 0
+let prevJumpCount = 0
 if (counter) {
     counter.innerHTML = score
 }
@@ -140,32 +186,33 @@ const tick = () => {
 
     if (evilHeart && evilHeart2) {
         if(evilHeart.position.z <= -4) {
-            speedFactor = 1.3 + (Math.random() * 0.5)
-            evilHeart.position.z = 4
+            speedFactor = 0.8 + (Math.random())
+            rotateFactor = 2 + (Math.random() * 4)
+            evilHeart.position.z = 4 
         }
         evilHeart.position.z -= deltaTime * speedFactor
-        evilHeart.rotation.y = elapsedTime * 4
+        evilHeart.rotation.y = elapsedTime * rotateFactor
     
     
         if(evilHeart2.position.z <= -4) {
-            speedFactor = 1.3 + (Math.random() * 0.5)
-            evilHeart2.position.z = 4 
+            speedFactor = 0.8 + (Math.random())
+            rotateFactor2 = 2 + (Math.random() * 4)
+            evilHeart2.position.z = 4  
         }
         evilHeart2.position.z -= deltaTime * speedFactor
-        evilHeart2.rotation.y = elapsedTime * 4 
+        evilHeart2.rotation.y = elapsedTime * rotateFactor2
 
-        if ((evilHeart.position.z <= 0.1 && evilHeart.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
-            failed = true
-            gameOver.style.display = 'flex'
-        }
-        if ((evilHeart2.position.z <= 0.1 && evilHeart2.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
+        if (((evilHeart.position.z <= 0.1 && evilHeart.position.z >= 0) || (evilHeart2.position.z <= 0.1 && evilHeart2.position.z >= 0)) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
             failed = true
             gameOver.style.display = 'flex'
         }
 
-        if (failed == false && ((evilHeart.position.z < 0.011 && evilHeart.position.z > -0.011) || (evilHeart2.position.z < 0.011 && evilHeart2.position.z > -0.011))) {
-            score += 1
-            counter.innerHTML = score
+        if (failed == false && ((evilHeart.position.z < 0 && evilHeart.position.z > -0.5) || (evilHeart2.position.z < 0 && evilHeart2.position.z > -0.5))) {
+            if (prevJumpCount != jumpCount) {
+                score += 1
+                counter.innerHTML = score
+                prevJumpCount += 1
+            }
         }
     }
 
