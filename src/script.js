@@ -120,6 +120,7 @@ scene.add(directionalLight)
 //Animate
 const clock = new THREE.Clock()
 let counter = document.getElementById("score")
+let gameOver = document.getElementById("gameover")
 let previousTime = 0
 let speedFactor = 1.2
 let failed = false
@@ -154,12 +155,12 @@ const tick = () => {
         evilHeart2.rotation.y = elapsedTime * 4 
 
         if ((evilHeart.position.z <= 0.1 && evilHeart.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
-            console.log("fail")
             failed = true
+            gameOver.style.display = 'flex'
         }
         if ((evilHeart2.position.z <= 0.1 && evilHeart2.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
-            console.log("fail")
             failed = true
+            gameOver.style.display = 'flex'
         }
 
         if (failed == false && ((evilHeart.position.z < 0.011 && evilHeart.position.z > -0.011) || (evilHeart2.position.z < 0.011 && evilHeart2.position.z > -0.011))) {
