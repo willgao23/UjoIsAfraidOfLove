@@ -18,7 +18,6 @@ let mixer = null
 gltfLoader.load(
     'ujo.glb',
     (gltf) => {
-        console.log(gltf)
         mixer = new THREE.AnimationMixer(gltf.scene)
         const run = mixer.clipAction(gltf.animations[1])
         run.play()
@@ -61,7 +60,6 @@ gltfLoader.load(
         gltf.scene.scale.set(0.25, 0.25, 0.25)
         gltf.scene.position.set(0, 0.6, 4)
         scene.add(gltf.scene)
-        console.log(gltf)
     }
 )
 gltfLoader.load(
@@ -71,7 +69,6 @@ gltfLoader.load(
         gltf.scene.scale.set(0.25, 0.25, 0.25)
         gltf.scene.position.set(0, 0.6, 8)
         scene.add(gltf.scene)
-        console.log(gltf)
     }
 )
 
@@ -122,8 +119,14 @@ scene.add(directionalLight)
 
 //Animate
 const clock = new THREE.Clock()
+let counter = document.getElementById("score")
 let previousTime = 0
 let speedFactor = 1.2
+let failed = false
+let score = 0
+if (counter) {
+    counter.innerHTML = score
+}
 
 const tick = () => {
     const elapsedTime = clock.getElapsedTime()
@@ -136,7 +139,7 @@ const tick = () => {
 
     if (evilHeart && evilHeart2) {
         if(evilHeart.position.z <= -4) {
-            speedFactor = 1.2 + (Math.random() * 0.5)
+            speedFactor = 1.3 + (Math.random() * 0.5)
             evilHeart.position.z = 4
         }
         evilHeart.position.z -= deltaTime * speedFactor
@@ -144,7 +147,7 @@ const tick = () => {
     
     
         if(evilHeart2.position.z <= -4) {
-            speedFactor = 1.2 + (Math.random() * 0.5)
+            speedFactor = 1.3 + (Math.random() * 0.5)
             evilHeart2.position.z = 4 
         }
         evilHeart2.position.z -= deltaTime * speedFactor
@@ -152,9 +155,16 @@ const tick = () => {
 
         if ((evilHeart.position.z <= 0.1 && evilHeart.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
             console.log("fail")
+            failed = true
         }
         if ((evilHeart2.position.z <= 0.1 && evilHeart2.position.z >= 0) && (!(jump.time >= 0.52 && jump.time <= 1.1) || jump.enabled == false)) {
             console.log("fail")
+            failed = true
+        }
+
+        if (failed == false && ((evilHeart.position.z < 0.011 && evilHeart.position.z > -0.011) || (evilHeart2.position.z < 0.011 && evilHeart2.position.z > -0.011))) {
+            score += 1
+            counter.innerHTML = score
         }
     }
 
@@ -164,3 +174,5 @@ const tick = () => {
 }
 
 tick()
+
+
