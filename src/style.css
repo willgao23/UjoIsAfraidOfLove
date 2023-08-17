@@ -45,6 +45,8 @@ body
     justify-content: center;
     z-index: 2;
     font-size: 100px;
+    line-height: 90px;
+    gap: 30px;
     font-weight: bolder;
     color: #ffffff;
     font-family:'Gill Sans', 'Gill Sans MT', 'Calibri', 'Trebuchet MS', sans-serif;
